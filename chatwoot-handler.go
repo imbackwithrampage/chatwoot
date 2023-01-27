@@ -197,7 +197,7 @@ func HandleMessageCreated(mc chatwootapi.MessageCreated) error {
 	defer log.Debugf("[chatwoot-handler] Released send lock for %s", roomID)
 	defer roomSendlocks[roomID].Unlock()
 
-	eventIDs := stateStore.GetMatrixEventIdsForChatwootMessage(mc.ID)
+	eventIDs := stateStore.GetMatrixEventIDsForChatwootMessage(mc.ID)
 
 	// Handle deletions first.
 	if mc.ContentAttributes != nil && mc.ContentAttributes.Deleted {

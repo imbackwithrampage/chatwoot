@@ -1,10 +1,19 @@
 package chatwootapi
 
+// Identifiers
+type AccountID int
+type AttachmentID int
+type ContactID int
+type ConversationID int
+type InboxID int
+type MessageID int
+type SenderID int
+
 // Contact
 type Contact struct {
-	ID         int    `json:"id"`
-	Email      string `json:"email"`
-	Identifier string `json:"identifier"`
+	ID         ContactID `json:"id"`
+	Email      string    `json:"email"`
+	Identifier string    `json:"identifier"`
 }
 
 type ContactsPayload struct {
@@ -20,34 +29,34 @@ type ContactPayload struct {
 }
 
 type CreateContactPayload struct {
-	InboxID     int    `json:"inbox_id"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	PhoneNumber string `json:"phone_number"`
-	Identifier  string `json:"identifier"`
+	InboxID     InboxID `json:"inbox_id"`
+	Name        string  `json:"name"`
+	Email       string  `json:"email"`
+	PhoneNumber string  `json:"phone_number"`
+	Identifier  string  `json:"identifier"`
 }
 
 // Attachment
 
 type Attachment struct {
-	ID        int    `json:"id"`
-	FileType  string `json:"file_type"`
-	AccountID int    `json:"account_id"`
-	DataURL   string `json:"data_url"`
-	ThumbURL  string `json:"thumb_url"`
+	ID        AttachmentID `json:"id"`
+	FileType  string       `json:"file_type"`
+	AccountID AccountID    `json:"account_id"`
+	DataURL   string       `json:"data_url"`
+	ThumbURL  string       `json:"thumb_url"`
 }
 
 // Message
 
 type Sender struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	Type          string `json:"user"`
-	AvailableName string `json:"available_name"`
+	ID            SenderID `json:"id"`
+	Name          string   `json:"name"`
+	Type          string   `json:"user"`
+	AvailableName string   `json:"available_name"`
 }
 
 type Message struct {
-	ID          int          `json:"id"`
+	ID          MessageID    `json:"id"`
 	Content     *string      `json:"content"`
 	Private     bool         `json:"private"`
 	Attachments []Attachment `json:"attachments"`
@@ -61,9 +70,9 @@ type ConversationMeta struct {
 }
 
 type Conversation struct {
-	ID               int               `json:"id"`
-	AccountID        int               `json:"account_id"`
-	InboxID          int               `json:"inbox_id"`
+	ID               ConversationID    `json:"id"`
+	AccountID        AccountID         `json:"account_id"`
+	InboxID          InboxID           `json:"inbox_id"`
 	Messages         []Message         `json:"messages"`
 	Meta             ConversationMeta  `json:"meta"`
 	CustomAttributes map[string]string `json:"custom_attributes"`
@@ -82,7 +91,7 @@ type ContentAttributes struct {
 // Webhook
 
 type MessageCreated struct {
-	ID                int                `json:"id"`
+	ID                MessageID          `json:"id"`
 	Content           string             `json:"content"`
 	CreatedAt         string             `json:"created_at"`
 	MessageType       string             `json:"message_type"`
@@ -93,6 +102,6 @@ type MessageCreated struct {
 }
 
 type ConversationStatusChanged struct {
-	ID     int    `json:"id"`
-	Status string `json:"status"`
+	ID     ConversationID `json:"id"`
+	Status string         `json:"status"`
 }

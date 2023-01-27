@@ -19,7 +19,7 @@ import (
 
 var createRoomLock sync.Mutex = sync.Mutex{}
 
-func createChatwootConversation(roomID mid.RoomID, contactMxid mid.UserID, customAttrs map[string]string) (int, error) {
+func createChatwootConversation(roomID mid.RoomID, contactMXID mid.UserID, customAttrs map[string]string) (chatwootapi.ConversationID, error) {
 	log.Debug("Acquired create room lock")
 	createRoomLock.Lock()
 	defer log.Debug("Released create room lock")
@@ -29,13 +29,13 @@ func createChatwootConversation(roomID mid.RoomID, contactMxid mid.UserID, custo
 		return conversationID, nil
 	}
 
-	contactID, err := chatwootApi.ContactIDForMxid(contactMxid)
+	contactID, err := chatwootApi.ContactIDForMxid(contactMXID)
 	if err != nil {
-		log.Errorf("Contact ID not found for user with MXID: %s. Error: %s", contactMxid, err)
+		log.Errorf("Contact ID not found for user with MXID: %s. Error: %s", contactMXID, err)
 
-		contactID, err = chatwootApi.CreateContact(contactMxid)
+		contactID, err = chatwootApi.CreateContact(contactMXID)
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("Create contact failed for %s: %s", contactMxid, err))
+			return 0, errors.New(fmt.Sprintf("Create contact failed for %s: %s", contactMXID, err))
 		}
 		log.Infof("Contact with ID %d created", contactID)
 	}
@@ -150,7 +150,7 @@ func HandleMessage(_ mautrix.EventSource, event *mevent.Event) {
 	defer log.Debugf("[message handler] Released send lock for %s", event.RoomID)
 	defer roomSendlocks[event.RoomID].Unlock()
 
-	if messageIDs, err := stateStore.GetChatwootMessageIdsForMatrixEventId(event.ID); err == nil && len(messageIDs) > 0 {
+	if messageIDs, err := stateStore.GetChatwootMessageIDsForMatrixEventID(event.ID); err == nil && len(messageIDs) > 0 {
 		log.Info("Matrix Event ID ", event.ID, " already has a Chatwoot message(s) with ID(s) ", messageIDs)
 		return
 	}
@@ -227,7 +227,7 @@ func HandleReaction(_ mautrix.EventSource, event *mevent.Event) {
 	defer log.Debugf("[reaction handler] Released send lock for %s", event.RoomID)
 	defer roomSendlocks[event.RoomID].Unlock()
 
-	if messageIDs, err := stateStore.GetChatwootMessageIdsForMatrixEventId(event.ID); err == nil && len(messageIDs) > 0 {
+	if messageIDs, err := stateStore.GetChatwootMessageIDsForMatrixEventID(event.ID); err == nil && len(messageIDs) > 0 {
 		log.Info("Matrix Event ID ", event.ID, " already has a Chatwoot message(s) with ID(s) ", messageIDs)
 		return
 	}
@@ -283,7 +283,7 @@ func HandleReaction(_ mautrix.EventSource, event *mevent.Event) {
 	stateStore.SetChatwootMessageIdForMatrixEvent(event.ID, (*cm).ID)
 }
 
-func HandleMatrixMessageContent(event *mevent.Event, conversationID int, content *mevent.MessageEventContent) ([]*chatwootapi.Message, error) {
+func HandleMatrixMessageContent(event *mevent.Event, conversationID chatwootapi.ConversationID, content *mevent.MessageEventContent) ([]*chatwootapi.Message, error) {
 	messageType := chatwootapi.IncomingMessage
 	if configuration.Username == event.Sender.String() {
 		messageType = chatwootapi.OutgoingMessage
@@ -371,7 +371,7 @@ func HandleRedaction(_ mautrix.EventSource, event *mevent.Event) {
 	defer log.Debugf("[redaction handler] Released send lock for %s", event.RoomID)
 	defer roomSendlocks[event.RoomID].Unlock()
 
-	messageIDs, err := stateStore.GetChatwootMessageIdsForMatrixEventId(event.ID)
+	messageIDs, err := stateStore.GetChatwootMessageIDsForMatrixEventID(event.ID)
 	if err != nil || len(messageIDs) == 0 {
 		log.Info("[redaction handler] No Chatwoot message for Matrix event ", event.Redacts)
 		return

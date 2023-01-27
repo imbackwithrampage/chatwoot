@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/beeper/chatwoot/chatwootapi"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,8 +17,8 @@ type Configuration struct {
 	// Chatwoot Authentication
 	ChatwootBaseUrl         string
 	ChatwootAccessTokenFile string
-	ChatwootAccountID       int
-	ChatwootInboxID         int
+	ChatwootAccountID       chatwootapi.AccountID
+	ChatwootInboxID         chatwootapi.InboxID
 
 	// Database settings
 	DBConnectionString string

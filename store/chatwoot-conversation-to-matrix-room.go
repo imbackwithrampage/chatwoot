@@ -3,23 +3,24 @@ package store
 import (
 	"database/sql"
 
+	"github.com/beeper/chatwoot/chatwootapi"
 	log "github.com/sirupsen/logrus"
 	mid "maunium.net/go/mautrix/id"
 )
 
-func (store *StateStore) GetChatwootConversationIDFromMatrixRoom(roomID mid.RoomID) (int, error) {
+func (store *StateStore) GetChatwootConversationIDFromMatrixRoom(roomID mid.RoomID) (chatwootapi.ConversationID, error) {
 	row := store.DB.QueryRow(`
 		SELECT chatwoot_conversation_id
 		  FROM chatwoot_conversation_to_matrix_room
 		 WHERE matrix_room_id = $1`, roomID)
-	var chatwootConversationId int
-	if err := row.Scan(&chatwootConversationId); err != nil {
+	var conversationID chatwootapi.ConversationID
+	if err := row.Scan(&conversationID); err != nil {
 		return -1, err
 	}
-	return chatwootConversationId, nil
+	return conversationID, nil
 }
 
-func (store *StateStore) GetMatrixRoomFromChatwootConversation(conversationID int) (mid.RoomID, mid.EventID, error) {
+func (store *StateStore) GetMatrixRoomFromChatwootConversation(conversationID chatwootapi.ConversationID) (mid.RoomID, mid.EventID, error) {
 	row := store.DB.QueryRow(`
 		SELECT matrix_room_id, most_recent_event_id
 		  FROM chatwoot_conversation_to_matrix_room
@@ -58,7 +59,7 @@ func (store *StateStore) UpdateMostRecentEventIdForRoom(roomID mid.RoomID, mostR
 	return tx.Commit()
 }
 
-func (store *StateStore) UpdateConversationIdForRoom(roomID mid.RoomID, conversationID int) error {
+func (store *StateStore) UpdateConversationIdForRoom(roomID mid.RoomID, conversationID chatwootapi.ConversationID) error {
 	log.Debug("Upserting row into chatwoot_conversation_to_matrix_room")
 	tx, err := store.DB.Begin()
 	if err != nil {

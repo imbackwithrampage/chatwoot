@@ -37,14 +37,14 @@ func MessageTypeString(messageType MessageType) string {
 
 type ChatwootAPI struct {
 	BaseURL     string
-	AccountID   int
-	InboxID     int
+	AccountID   AccountID
+	InboxID     InboxID
 	AccessToken string
 
 	Client *http.Client
 }
 
-func CreateChatwootAPI(baseURL string, accountID int, inboxID int, accessToken string) *ChatwootAPI {
+func CreateChatwootAPI(baseURL string, accountID AccountID, inboxID InboxID, accessToken string) *ChatwootAPI {
 	return &ChatwootAPI{
 		BaseURL:     baseURL,
 		AccountID:   accountID,
@@ -76,7 +76,7 @@ func (api *ChatwootAPI) MakeUri(endpoint string) string {
 	return url.String()
 }
 
-func (api *ChatwootAPI) CreateContact(userID mid.UserID) (int, error) {
+func (api *ChatwootAPI) CreateContact(userID mid.UserID) (ContactID, error) {
 	log.Info("Creating contact for ", userID)
 	payload := CreateContactPayload{
 		InboxID:    api.InboxID,
@@ -115,7 +115,7 @@ func (api *ChatwootAPI) CreateContact(userID mid.UserID) (int, error) {
 	return contactPayload.Payload.Contact.ID, nil
 }
 
-func (api *ChatwootAPI) ContactIDForMxid(userID mid.UserID) (int, error) {
+func (api *ChatwootAPI) ContactIDForMxid(userID mid.UserID) (ContactID, error) {
 	req, err := http.NewRequest(http.MethodGet, api.MakeUri("contacts/search"), nil)
 	if err != nil {
 		log.Error(err)
@@ -150,7 +150,7 @@ func (api *ChatwootAPI) ContactIDForMxid(userID mid.UserID) (int, error) {
 	return 0, errors.New(fmt.Sprintf("Couldn't find user with user ID %s!", userID))
 }
 
-func (api *ChatwootAPI) GetChatwootConversation(conversationID int) (*Conversation, error) {
+func (api *ChatwootAPI) GetChatwootConversation(conversationID ConversationID) (*Conversation, error) {
 	req, err := http.NewRequest(http.MethodGet, api.MakeUri(fmt.Sprintf("conversations/%d", conversationID)), nil)
 	if err != nil {
 		log.Error(err)
@@ -175,7 +175,7 @@ func (api *ChatwootAPI) GetChatwootConversation(conversationID int) (*Conversati
 	return &conversation, nil
 }
 
-func (api *ChatwootAPI) CreateConversation(sourceID string, contactID int, additionalAttrs map[string]string) (*Conversation, error) {
+func (api *ChatwootAPI) CreateConversation(sourceID string, contactID ContactID, additionalAttrs map[string]string) (*Conversation, error) {
 	values := map[string]any{
 		"source_id":             sourceID,
 		"inbox_id":              api.InboxID,
@@ -212,7 +212,7 @@ func (api *ChatwootAPI) CreateConversation(sourceID string, contactID int, addit
 	return &conversation, nil
 }
 
-func (api *ChatwootAPI) AddConversationLabel(conversationID int, labels []string) error {
+func (api *ChatwootAPI) AddConversationLabel(conversationID ConversationID, labels []string) error {
 	jsonValue, err := json.Marshal(map[string]any{"labels": labels})
 	if err != nil {
 		return err
@@ -236,7 +236,7 @@ func (api *ChatwootAPI) AddConversationLabel(conversationID int, labels []string
 	return nil
 }
 
-func (api *ChatwootAPI) SetConversationCustomAttributes(conversationID int, customAttrs map[string]string) error {
+func (api *ChatwootAPI) SetConversationCustomAttributes(conversationID ConversationID, customAttrs map[string]string) error {
 	jsonValue, _ := json.Marshal(map[string]any{
 		"custom_attributes": customAttrs,
 	})
@@ -257,7 +257,7 @@ func (api *ChatwootAPI) SetConversationCustomAttributes(conversationID int, cust
 	return nil
 }
 
-func (api *ChatwootAPI) doSendTextMessage(conversationID int, jsonValues map[string]any) (*Message, error) {
+func (api *ChatwootAPI) doSendTextMessage(conversationID ConversationID, jsonValues map[string]any) (*Message, error) {
 	jsonValue, _ := json.Marshal(jsonValues)
 	req, err := http.NewRequest(http.MethodPost, api.MakeUri(fmt.Sprintf("conversations/%d/messages", conversationID)), bytes.NewBuffer(jsonValue))
 	if err != nil {
@@ -288,19 +288,19 @@ func (api *ChatwootAPI) doSendTextMessage(conversationID int, jsonValues map[str
 
 }
 
-func (api *ChatwootAPI) SendTextMessage(conversationID int, content string, messageType MessageType) (*Message, error) {
+func (api *ChatwootAPI) SendTextMessage(conversationID ConversationID, content string, messageType MessageType) (*Message, error) {
 	values := map[string]any{"content": content, "message_type": MessageTypeString(messageType), "private": false}
 	return api.doSendTextMessage(conversationID, values)
 }
 
-func (api *ChatwootAPI) SendPrivateMessage(conversationID int, content string) (*Message, error) {
+func (api *ChatwootAPI) SendPrivateMessage(conversationID ConversationID, content string) (*Message, error) {
 	values := map[string]any{"content": content, "message_type": MessageTypeString(OutgoingMessage), "private": true}
 	return api.doSendTextMessage(conversationID, values)
 }
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
-func (api *ChatwootAPI) SendAttachmentMessage(conversationID int, filename string, mimeType string, fileData io.Reader, messageType MessageType) (*Message, error) {
+func (api *ChatwootAPI) SendAttachmentMessage(conversationID ConversationID, filename string, mimeType string, fileData io.Reader, messageType MessageType) (*Message, error) {
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
 
@@ -398,7 +398,7 @@ func (api *ChatwootAPI) DownloadAttachment(url string) (*[]byte, error) {
 	return &data, err
 }
 
-func (api *ChatwootAPI) DeleteMessage(conversationID int, messageID int) error {
+func (api *ChatwootAPI) DeleteMessage(conversationID ConversationID, messageID MessageID) error {
 	req, err := http.NewRequest(http.MethodDelete, api.MakeUri(fmt.Sprintf("conversations/%d/messages/%d", conversationID, messageID)), nil)
 	if err != nil {
 		log.Error(err)
